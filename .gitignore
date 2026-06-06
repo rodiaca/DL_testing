@@ -1,0 +1,24 @@
+# Datasets y almacenamiento masivo (¡No subir los ~160MB de CIFAR-10!)
+data/
+
+# Entornos virtuales locales (por si acaso creas alguno dentro del repo)
+env/
+venv/
+dl_env/
+
+# Caché de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de configuración de editores/SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Checkpoints de modelos o logs que generes entrenando
+*.pt
+*.pth
+*.log
