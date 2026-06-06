@@ -35,29 +35,39 @@ def train():
     # 3. Función de pérdida y optimizador
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-    # 4. Bucle de entrenamiento (Epoch 1 para validar estabilidad)
-    model.train()
-    for batch_idx, (data, targets) in enumerate(train_loader):
-        # Transferencia explícita de tensores Host -> Device 
-        data, targets = data.to(device), targets.to(device)
-        
-        # Forward pass
-        outputs = model(data)
-        loss = criterion(outputs, targets)
-        
-        # Backward pass y optimización
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        
-        if batch_idx % 200 == 0:
-            print(f"Lote [{batch_idx}/{len(train_loader)}] | Pérdida: {loss.item():.4f}")
-            # Estrategia proactiva: Vaciar caché de PyTorch para mitigar fragmentación en 4GB [cite: 26]
-            torch.cuda.empty_cache()
     
-    # Al terminar la época, evaluamos el rendimiento real
-    evaluate(model, test_loader, device)
+    # Planificador para aumentar el accuracy: Reduce el LR a la mitad cada 2 épocas
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.5)
+
+    NUM_EPOCHS = 5
+    for epoch in range(NUM_EPOCHS):
+        print(f"\n--- ÉPOCA {epoch + 1}/{NUM_EPOCHS} ---")
+        # 4. Bucle de entrenamiento (Epoch 1 para validar estabilidad)
+        model.train()
+
+        for batch_idx, (data, targets) in enumerate(train_loader):
+            # Transferencia explícita de tensores Host -> Device 
+            data, targets = data.to(device), targets.to(device)
+        
+            # Forward pass
+            outputs = model(data)
+            loss = criterion(outputs, targets)
+        
+            # Backward pass y optimización
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        
+            if batch_idx % 400 == 0:
+                print(f"Lote [{batch_idx}/{len(train_loader)}] | Pérdida: {loss.item():.4f}")
+                # Estrategia proactiva: Vaciar caché de PyTorch para mitigar fragmentación en 4GB [cite: 26]
+                torch.cuda.empty_cache()
+        
+        # Actualizamos el learning rate al final de la época
+        scheduler.step()
+
+        # Al terminar la época, evaluamos el rendimiento real
+        evaluate(model, test_loader, device)
 
 if __name__ == '__main__':
     train()
